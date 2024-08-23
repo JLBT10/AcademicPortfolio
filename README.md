@@ -13,7 +13,7 @@ Foundation and Advanced Statistics for Machine Learning Unit
 
 Two intensive learning units focusing on classical statistical modeling methods. The foundation part concentrates on discrete and continuous probability distribution, density functions, univariate linear regression and hypothesis testing.
 
-Link to Fondation Statistics Exam
+[Link to Fondation Statistics Exam](https://github.com/JLBT10/School_Projects/blob/main/FSML%20EXAM.pdf)
 
 The Advanced part of the learning module addresses advanced statistical methods including multivariate linear models, Analysis of Variance, Model Regularization methods (Lasso & Ridge), Model selection methods, Decision trees, bagging and boosting, Random Forests, Dimensionality reduction using Principal Component Analysis.
 
