@@ -1,0 +1,87 @@
+--QUESTION 4--
+In the database WideWorldImporters, write a SQL query which reports the highest loss of money from orders not being converted into invoices, by customer category.
+
+The name and id of the customer who generated this highest loss must also be identified. The result set is ordered by highest loss.
+
+--ANSWERS--
+USE WideWorldImporters
+
+SELECT
+		LPC.CustomerCategoryName
+		,LPC.LossPerCategory as MaxLoss
+		,SBR.CustomerName
+		,SBR.CustomerID
+
+FROM (
+		SELECT
+			BR.CustomerCategoryName
+			,Max(BR.LossPerCategory) as LossPerCategory
+		FROM
+
+		(SELECT  CG.CustomerCategoryName
+				,CU.CustomerID
+				,CU.CustomerName
+				,SUM(ValuePerOrderID) as LossPerCategory
+
+		FROM
+			Sales.Orders as O
+			,Sales.customers as CU
+			,sales.CustomerCategories as CG
+
+			,(
+			  SELECT OL.OrderID, SUM(OL.UnitPrice * OL.Quantity) as ValuePerOrderID
+			  FROM Sales.OrderLines as OL
+			  GROUP BY OL.OrderID
+			  ) as TOL -- Transform OrderLines
+
+		WHERE NOT EXISTS (
+				SELECT I.InvoiceID
+				FROM
+					Sales.Invoices as I
+				Where I.OrderID=O.OrderID)
+				AND CU.CustomerID=O.CustomerID
+				AND CU.CustomerCategoryID=CG.CustomerCategoryID
+				AND O.OrderID=TOL.OrderID
+
+		GROUP BY 
+				CG.CustomerCategoryName
+				,CU.CustomerID
+				,CU.CustomerName) as BR -- Buffer Reporting
+		GROUP BY BR.CustomerCategoryName) as LPC -- Loss Per Category
+
+		LEFT JOIN 
+		(	SELECT  CG.CustomerCategoryName
+				,CU.CustomerID
+				,CU.CustomerName
+				,SUM(ValuePerOrderID) as LossPerCategory
+
+		FROM
+			Sales.Orders as O
+			,Sales.customers as CU
+			,sales.CustomerCategories as CG
+
+			,(
+			  SELECT OL.OrderID, SUM(OL.UnitPrice * OL.Quantity) as ValuePerOrderID
+			  FROM Sales.OrderLines as OL
+			  GROUP BY OL.OrderID
+			  ) as TOL -- Transform OrderLines
+
+		WHERE NOT EXISTS (
+				SELECT I.InvoiceID
+				FROM
+					Sales.Invoices as I
+				Where I.OrderID=O.OrderID)
+				AND CU.CustomerID=O.CustomerID
+				AND CU.CustomerCategoryID=CG.CustomerCategoryID
+				AND O.OrderID=TOL.OrderID
+
+		GROUP BY 
+				CG.CustomerCategoryName
+				,CU.CustomerID
+				,CU.CustomerName) as SBR -- Second Buffer reporting
+				
+				ON 
+					LPC.CustomerCategoryName=SBR.CustomerCategoryName
+					AND LPC.LossPerCategory=SBR.LossPerCategory
+ORDER BY
+		MaxLoss DESC

@@ -1,0 +1,67 @@
+--QUESTION 1--
+
+Using the database WideWorldImporters, write a SQL query which reports the consistency between orders and their attached invoices.
+The resultset should report for each (CustomerID, CustomerName)
+ a. the total number of orders: TotalNBOrders
+ b. the number of invoices converted from an order: TotalNBInvoices
+ c. the total value of orders: OrdersTotalValue
+ d. the total value of invoices: InvoicesTotalValue
+ f. the absolute value of the difference between c - d: AbsoluteValueDifference
+ 
+ The result set must be sorted by highest values of AbsoluteValueDifference, then by smallest to highest values of TotalNBOrders and CustomerName is that order.
+
+--ANSWERS--
+USE WideWorldImporters
+
+SELECT 
+	O.CustomerID
+	,CU.CustomerName
+	,COUNT(O.OrderID) as TotalNBOrders
+	,COUNT(I.InvoiceID) as TotalNBInvoices
+	,SUM(TOL.ValuePerOrder) as OrdersTotalValue
+	,SUM(TIL.ValuePerInvoice) as InvoicesTotalValue
+	,ABS(SUM(TOL.ValuePerOrder)-SUM(TIL.ValuePerInvoice)) as AbsoluteValueDifference
+
+FROM
+	Sales.Orders as O
+	,Sales.Invoices as I
+	,Sales.Customers as CU
+
+	-- We create a new table(TOL) where we calculated the value per order so that 
+	--: One Order from Sales.OrderID matches one Order From TOL
+	-- This will allow us to count the number of orders in our SELECT after joining tables
+	,(
+
+	SELECT 
+			OL.OrderID
+			,SUM(OL.UnitPrice * OL.Quantity) as ValuePerOrder
+	FROM
+			Sales.OrderLines as OL
+	GROUP BY OL.OrderID
+
+	 ) as TOL -- Transform OrderLine
+
+	 -- We do the same for InvoiceLine
+	,(
+
+	SELECT 
+			IL.InvoiceID
+			,SUM(IL.UnitPrice * IL.Quantity) as ValuePerInvoice
+	FROM
+			Sales.InvoiceLines as IL
+	GROUP BY IL.InvoiceID
+
+	 ) as TIL -- Transform InvoiceLines 
+
+WHERE 
+	CU.CustomerID=O.CustomerID
+	AND O.OrderID=I.OrderID 
+	AND O.OrderID=TOL.OrderID
+	AND I.InvoiceID=TIL.InvoiceID
+
+GROUP BY O.CustomerID
+	,CU.CustomerName
+
+ORDER BY AbsoluteValueDifference DESC
+		,TotalNBOrders ASC
+		,CU.CustomerName ASC

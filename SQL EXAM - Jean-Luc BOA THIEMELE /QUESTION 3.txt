@@ -1,0 +1,199 @@
+--QUESTION 3--
+Using the database WideWorldImporters, write a T-SQL stored procedure called ReportCustomerTurnover.
+This procedure takes two parameters: Choice and Year, both integers.
+
+When Choice = 1 and Year = <aYear>, ReportCustomerTurnover selects all the customer names and their total monthly turnover (invoiced value) for the year <aYear>.
+
+When Choice = 2 and Year = <aYear>, ReportCustomerTurnover  selects all the customer names and their total quarterly (3 months) turnover (invoiced value) for the year <aYear>.
+
+When Choice = 3, the value of Year is ignored and ReportCustomerTurnover  selects all the customer names and their total yearly turnover (invoiced value).
+
+When no value is provided for the parameter Choice, the default value of Choice must be 1.
+When no value is provided for the parameter Year, the default value is 2013. This doesn't impact Choice = 3.
+
+For Choice = 3, the years can be hard-coded within the range of [2013-2016].
+
+NULL values in the resultsets are not acceptable and must be substituted to 0.
+
+All output resultsets are ordered by customer names alphabetically.
+
+Example datasets are provided for the following calls:
+EXEC dbo.ReportCustomerTurnover;
+EXEC dbo.ReportCustomerTurnover 1, 2014;
+EXEC dbo.ReportCustomerTurnover 2, 2015;
+EXEC dbo.ReportCustomerTurnover 3;
+
+--ANSWERS--
+
+USE WideWorldImporters
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Jean-Luc BOA THIEMELE>
+-- Create date: <08/12/2022>
+-- =============================================
+
+CREATE PROCEDURE ReportCustomerTurnover
+
+	-- Setting default parameters for the stored procedure.
+	@Choice int = 1,
+	@Year int = 2013
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+
+	IF @Choice=1
+BEGIN -- BEGIN FOR @CHOICE=1
+
+
+SELECT 
+		CustomerName
+	,COALESCE([1],0) as Jan
+	,COALESCE([2],0) as Feb
+	,COALESCE([3],0) as Mar
+	,COALESCE([4],0) as Apr
+	,COALESCE([5],0) as May
+	,COALESCE([6],0) as Jun
+	,COALESCE([7],0) as Jul
+	,COALESCE([8],0) as Aug
+	,COALESCE([9],0) as Sept
+	,COALESCE([10],0) as Oct
+	,COALESCE([11],0) as Nov
+	,COALESCE([12],0) as [Dec]
+FROM
+	(
+
+	SELECT cu.CustomerName
+			,MR.Months
+			,MR.ValuePerMonth
+	FROM
+		sales.Customers as CU LEFT JOIN (
+
+		SELECT
+			I.CustomerID
+			,MONTH(I.InvoiceDate) as Months
+			,SUM(IL.Quantity * IL.UnitPrice) as ValuePerMonth
+		FROM	
+			Sales.Invoices as I
+			,Sales.InvoiceLines as IL
+		WHERE 
+			I.InvoiceID=IL.InvoiceID
+		AND YEAR(I.InvoiceDate)=@Year
+		GROUP BY 
+				I.CustomerID
+				,MONTH(I.InvoiceDate)
+		) as MR-- MR : Mini Report
+
+		ON CU.CustomerID=MR.CustomerID
+
+		) as SourceTable
+	
+	PIVOT(
+		SUM(ValuePerMonth) FOR Months IN ([1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12])
+		) as PivotTable 
+		ORDER BY CustomerName
+	
+END-- END FOR @Choice=1
+
+
+ELSE IF @Choice=2
+BEGIN -- BEGIN FOR CHOICE = 2
+
+SELECT 
+		CustomerName
+	,COALESCE([1],0) as Q1
+	,COALESCE([2],0) as Q2
+	,COALESCE([3],0) as Q3 
+	,COALESCE([4],0) as Q4
+FROM
+	(
+
+	SELECT cu.CustomerName
+			,MR.Quarters
+			,MR.ValuePerQuarters
+	FROM
+		sales.Customers as CU LEFT JOIN (
+		SELECT
+			I.CustomerID
+			,DATEPART(QUARTER, I.InvoiceDate) as Quarters
+			,SUM(IL.Quantity * IL.UnitPrice) as ValuePerQuarters
+		FROM	
+			Sales.Invoices as I
+			,Sales.InvoiceLines as IL
+		WHERE 
+			I.InvoiceID=IL.InvoiceID
+			AND YEAR(I.InvoiceDate)=@Year
+		GROUP BY 
+			I.CustomerID
+			,DATEPART(QUARTER, I.InvoiceDate)
+
+		) as MR-- MR : Mini Report
+		ON CU.CustomerID=MR.CustomerID
+
+		) as SourceTable
+	
+	PIVOT(
+		SUM(ValuePerQuarters) FOR Quarters IN ([1],[2],[3],[4])
+		) as PivotTable 
+		ORDER BY CustomerName
+
+
+END -- END FOR @CHOICE =2
+
+ELSE IF @Choice=3
+BEGIN -- BEGIN FOR  @CHOICE =3
+
+SELECT 
+		CustomerName
+	,COALESCE([2013],0) as [2013]
+	,COALESCE([2014],0) as [2014]
+	,COALESCE([2015],0) as [2015]
+	,COALESCE([2016],0) as [2016]
+FROM
+	(
+
+	SELECT cu.CustomerName
+			,MR.Years
+			,MR.ValuePerYears
+	FROM
+		sales.Customers as CU LEFT JOIN (
+		SELECT
+			I.CustomerID
+			,YEAR(I.InvoiceDate) as Years
+			,SUM(IL.Quantity * IL.UnitPrice) as ValuePerYears
+		FROM	
+			Sales.Invoices as I
+			,Sales.InvoiceLines as IL
+		WHERE 
+			I.InvoiceID=IL.InvoiceID
+
+		GROUP BY I.CustomerID,YEAR(I.InvoiceDate)
+		) as MR-- MR : Mini Report
+		ON CU.CustomerID=MR.CustomerID
+
+		) as SourceTable
+	
+	PIVOT(
+		SUM(ValuePerYears) FOR Years IN ([2013],[2014],[2015],[2016])
+		) as PivotTable 
+		ORDER BY CustomerName
+
+
+END -- FOR @CHOICE =3
+
+ELSE PRINT 'ERROR: Parameter out of bound. Please select Choice in [1,2,3]'
+
+END--END FOR THE  BEGIN AFTER CREATE PROCEDURE
+
+GO
+
+EXEC dbo.ReportCustomerTurnover;
+EXEC dbo.ReportCustomerTurnover 1, 2014;
+EXEC dbo.ReportCustomerTurnover 2, 2015;
+EXEC dbo.ReportCustomerTurnover 3;

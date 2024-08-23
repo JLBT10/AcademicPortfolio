@@ -1,0 +1,34 @@
+--QUESTION2--
+For the CustomerId = 1060 (CustomerName = 'Anand Mudaliyar')
+Identify the first InvoiceLine of his first Invoice, where "first" means the lowest respective IDs, and write an update query increasing the UnitPrice of this InvoiceLine by 20.
+
+--ANSWERS--
+
+USE WideWorldImporters
+
+SELECT TOP(1)
+	CU.CustomerID
+	,CU.CustomerName
+	,I.InvoiceID
+	,IL.InvoiceLineID
+	,IL.Quantity
+	,IL.UnitPrice
+FROM
+	Sales.Customers as CU
+	,Sales.Invoices as I
+	,Sales.InvoiceLines as IL 
+WHERE 
+	CU.CustomerID=1060
+	AND CU.CustomerID=I.CustomerID
+	AND IL.InvoiceID=I.InvoiceID
+ORDER BY 
+	IL.InvoiceLineID
+
+
+-- The Lowest Invoice Line ID is 225394 and the price is equal to 240
+
+-- Let's update the price to 260
+
+UPDATE Sales.InvoiceLines
+SET UnitPrice=260
+WHERE InvoiceLineID=225394

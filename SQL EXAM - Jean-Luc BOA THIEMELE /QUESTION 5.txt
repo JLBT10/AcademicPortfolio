@@ -1,0 +1,27 @@
+--QUESTION 5--
+In the database SQLPlayground, write a SQL query selecting all the customers' data who have purchased all the products AND have bought more than 50 products in total (sum of all purchases).
+
+--ANSWERS--
+
+USE SQLPLAYGROUND
+
+SELECT * 
+FROM Customer AS C
+WHERE NOT EXISTS (
+
+SELECT*
+FROM Product as p
+WHERE NOT EXISTS (
+
+SELECT *
+FROM Purchase as PU
+WHERE 
+
+	PU.CustomerId=C.CustomerId
+
+	AND PU.ProductId=P.ProductId 
+
+	AND (SELECT SUM(PU2.QTY)
+		FROM Purchase AS PU2
+		WHERE PU2.CustomerId=C.CustomerId
+		GROUP BY PU2.CustomerId)>50))
