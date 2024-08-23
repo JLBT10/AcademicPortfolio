@@ -15,8 +15,8 @@ proc print data =Work.Laguardia;
 	by Dest;
 run;
 
-/* Store the results, grouped by the variable Dest, in a PDF file named “LGA Airport.pdf”
-using the FestivalPrinter style with a report title, “Laguardia Flights”. */
+/* Store the results, grouped by the variable Dest, in a PDF file named â€œLGA Airport.pdfâ€
+using the FestivalPrinter style with a report title, â€œLaguardia Flightsâ€. */
 title1 "Laguardia Flights";
 ods pdf file="&path\LGA Airport.pdf"
 		 STYLE=FestivalPrinter;
