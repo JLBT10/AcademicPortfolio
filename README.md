@@ -22,4 +22,4 @@ The Advanced part of the learning module addresses advanced statistical methods 
 
 Semantic Web learning unit is all about the data formats and the technologies to enable it like RDF, N-3, Turtle, How to query these data using SPARQL, and how to expand the vocabulary using OWL ontology.
 
-[Link to report]()
+[Link to report](https://github.com/JLBT10/School_Projects/blob/main/Handout_Web_semantic_BOA_THIEMELE%20(1).pdf)
