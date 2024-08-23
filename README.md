@@ -17,4 +17,4 @@ Two intensive learning units focusing on classical statistical modeling methods.
 
 The Advanced part of the learning module addresses advanced statistical methods including multivariate linear models, Analysis of Variance, Model Regularization methods (Lasso & Ridge), Model selection methods, Decision trees, bagging and boosting, Random Forests, Dimensionality reduction using Principal Component Analysis.
 
-Link to Advanced Statistics Exam
+[Link to Advanced Statistics Exam](https://github.com/JLBT10/School_Projects/blob/main/ASML%20EXAM.pdf)
