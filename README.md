@@ -19,7 +19,7 @@ The Advanced part of the learning module addresses advanced statistical methods 
 
 [Link to Advanced Statistics Exam](https://github.com/JLBT10/School_Projects/blob/main/ASML%20Project.pdf)
 
-#Semantic Web Unit
+# Semantic Web Unit
 
 Semantic Web learning unit is all about the data formats and the technologies to enable it like RDF, N-3, Turtle, How to query these data using SPARQL, and how to expand the vocabulary using OWL ontology.
 
