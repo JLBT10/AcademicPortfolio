@@ -1,0 +1,246 @@
+---
+title: "EXAM ASML PART 2  Exercice 2 - Question 1"
+author: "Jean-Luc BOA THIEMELE"
+date: "2024-02-15"
+output: pdf_document
+---
+
+```{r b}
+#Loading dataset
+load("/Users/jlbt/Downloads/data_advanced.RData")
+```
+
+```{r c}
+##Installing and loading library
+#install.packages("rpart") 
+#install.packages("VSURF")
+#install.packages("randomForest")
+library("randomForest")
+library("VSURF")
+library(rpart)
+```
+
+MODEL 1: Classification using CART model
+
+```{r d}
+
+#Let's define explanatories and predicted variable 
+X = A$X # Set of explanatory variables
+Y = data.frame(Y = A$Y) # The variable to predict
+data = cbind(X,Y)
+
+set.seed(42)
+#STEP 1 : Construction of the maximal tree
+max_tree = rpart(Y ~ .,data=data,minsplit=2,cp=10^(-9))
+
+#STEP 2 : Construction of the best tree
+best_cart_model=function (T)
+{
+  table_of_cp = T$cptable
+  #We extract the cross validation error columns
+  cross_validation_error=table_of_cp[, 4] 
+  
+  #We get the index of the minimum of the CV error
+  index_min_cv = which(cross_validation_error==min(cross_validation_error))
+  
+  # We compute the threshold as min(cv_error) + its standard deviation 
+  threshold = min(table_of_cp[index_min_cv, 4] + table_of_cp[index_min_cv, 5])
+  
+  #We extract the index of all the cross validationerror less or equal to the threshold
+  index_cv_inf_thres = which(cross_validation_error<=threshold)
+  best_cp_index =index_cv_inf_thres[1] #Get the first index of the index of cv inferior to threshold => best cp 
+  Tf=prune(T, cp=table_of_cp[best_cp_index, 1]) # We prune the maximal tree by using the best cp value to get the best cart model
+  best_cart_model=Tf
+}
+
+cart_model = best_cart_model(max_tree) #Best model using Cart Algo
+print(cart_model)
+```
+
+Model 2 : Using VSURF for variables selection and CART for generating the best tree after the interpret step and the prediction step
+
+```{r e}
+# Custom column names
+set.seed(42)
+#We perform variable selection with VSURF
+variable_selection = VSURF(data$Y ~.,data=data)
+
+# variables selected after interpretation step
+selection_interp_step = variable_selection$varselect.interp 
+
+# variables selected after prediction step
+selection_pred_step = variable_selection$varselect.pred 
+
+#Reordering indices to get indices of the original data
+selection_interp_step = data[,c(colnames(data[selection_interp_step]),"Y")]
+selection_pred_step = data[,c(colnames(data[selection_pred_step]),"Y")]
+
+#We contruct the maximal tree using CART
+max_tree_interp = rpart(Y ~ .,data=selection_interp_step,minsplit=2,cp=10^(-9))
+max_tree_pred = rpart(Y ~ .,data=selection_pred_step,minsplit=2,cp=10^(-9))
+
+# we determine the best model
+best_tree_interp = best_cart_model(max_tree_interp)
+best_tree_pred = best_cart_model(max_tree_pred)
+
+print(best_tree_interp)
+print(best_tree_pred)
+
+```
+
+Model 3 : Random forest
+
+```{r f}
+set.seed(42)
+### Using random forest
+## We split the data
+rf = randomForest(Y ~.,data=data)
+print(rf)
+```
+EVALUATE MODELS USING CROSS VALIDATION
+```{r g}
+
+#Splitting function for cross validation
+splitting=function(u,V,seed) #function to split a vector in V parts
+{
+  n=length(u)
+  k=floor(n/V) #number of elements in mean in each part
+  L=list() #initialization
+  for (i in 1:(V-1))  #loop to create the V subsamples
+  {
+    set.seed(seed)
+    u1=sample(u,k,replace=FALSE) #individuals in the subsample number i
+    L=c(L,list(u1))  #to save the different subsamples
+    b=c()
+    
+    #to know the position of the individuals in the vector u1 inside the vector u
+    for (j in (1:k)) 
+      b=c(b,which(u==u1[j]))
+    u=u[-b] #we suppress the individuals that constitute the subsample number i
+  }
+  L=c(L,list(u))  #the last vector u is the last subsample
+  splitting=L
+}
+
+crosserror=function(SL) # function to compute the cross validation error
+{
+  #Initialisation of test error variables
+  testerr_interp=c()
+  testerr_pred=c()
+  testerr_rf=c()
+  testerr_cart=c()
+  
+  V=length(SL)
+  for (k in 1:V)
+  {
+    #step k
+    Learning=data[-SL[[k]],] #learning sample at step k
+    Test=data[SL[[k]],] #test sample at step k
+    
+    ###Random forest
+    model_rf = randomForest(Learning$Y ~., data=Learning)
+    
+    ### Cart model
+    max_tree = rpart(Y ~ .,data=Learning,minsplit=2,cp=10^(-9))
+    model_cart = best_cart_model(max_tree)
+    
+    ### Cart model after interp step
+    variable_selection = VSURF(Y ~.,data=Learning)
+    selection_interp_step = variable_selection$varselect.interp
+    selection_interp_step = Learning[,c(colnames(Learning[selection_interp_step]),"Y")]
+    max_tree_interp = rpart(Y ~ .,data=selection_interp_step,minsplit=2,cp=10^(-9))
+    model_interp = best_cart_model(max_tree_interp)
+    
+    ### Cart model after prediction step
+    selection_pred_step = variable_selection$varselect.pred
+    selection_pred_step = Learning[,c(colnames(Learning[selection_pred_step]),"Y")]
+    max_tree_pred = rpart(Y ~ .,data=selection_pred_step,minsplit=2,cp=10^(-9))
+    model_pred = best_cart_model(max_tree_pred)
+    
+    #Prediction with each model
+    pred_rf=predict(model_rf,newdata=Test,type='class') 
+    pred_pred=predict(model_pred,newdata=Test,type='class')
+    pred_interp=predict(model_interp,newdata=Test,type='class')
+    pred_cart=predict(model_cart,newdata=Test,type='class')
+    
+    testerr_rf = c(testerr_rf, mean(Test$Y != pred_rf))
+    testerr_pred = c(testerr_pred, mean(Test$Y != pred_pred))
+    testerr_interp = c(testerr_interp, mean(Test$Y != pred_interp))
+    testerr_cart = c(testerr_cart, mean(Test$Y != pred_cart))
+  }
+  crosserror=list( testerr_rf,testerr_cart, testerr_pred, testerr_interp) #a list with a first element which is a vector of the intermediate test errors for the model giben by backward
+  #the second element is the same for the forward model
+}
+
+```
+
+```{r h}
+n = nrow(data) #number of individuals
+u = 1:n #the number of all the individuals
+V = 3 #number of split
+
+means_per_row=c()
+for (i in list(42,107,142)) #Prediction with different seed
+{
+  SL=splitting(u,V,seed=i)
+  
+  errors = crosserror(SL)
+  
+  # Convert the list to a matrix
+  data_matrix <- do.call(rbind, errors)
+  
+  # Compute the mean for each row
+  means_per_row <- c(means_per_row,rowMeans(data_matrix))
+}
+```
+
+```{r}
+row_names <- c("Errors_rf","Errors_cart_model", "Erros_best_tree_pred", "Errors_best_tree_interp")
+names(means_per_row) <- row_names
+
+
+# Create sample data for demonstration
+results <- matrix(means_per_row, nrow = 4, ncol = 3)
+
+# Create a data frame with row names as seeds and column names as model names
+results_df <- as.data.frame(results)
+rownames(results_df) <- row_names
+colnames(results_df) <- c(42,107,142)
+
+# Print the data frame
+print(results_df)
+
+```
+
+```{r i}
+"
+
+We can see that depending of the choice of seed, the best model changes. 
+-for a seed of 42 the best models are those obtain with the selected 
+variables after the interpretation and prediction step.
+-for a seed of 107, the best model is the random forest
+-for a seed of 142, the best model is the model constructed 
+with the selected variables after the prediction step
+
+From the results, the key observation is that the variability 
+introduced by randomness and the choice of seed during model
+training, can significantly impact model stability, generalizability, 
+and interpretability. Indeed :
+
+-The varying misclassification errors across different seeds
+reflect the sensitivity of models to initial randomizations,
+leading to different model structures and performance metrics.
+This variability poses challenges in interpreting model results
+and comparing the effectiveness of different algorithms.
+
+-The observed differences in misclassification errors highlight
+concerns regarding the models' ability to generalize well to unseen data. 
+
+-The fluctuating performance makes it difficult to select the
+best model after obtaining cross-validation metrics.
+
+###Solution:
+In order to resolve these issues, we must increase the dataset
+size to reduce the influence of randomness."
+
+```
