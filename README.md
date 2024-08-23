@@ -9,7 +9,7 @@ Using WideWorldImporters Sample Database for SQL Server, the 5 hours exam consis
 * [Question & solution 4](https://github.com/JLBT10/School_Projects/blob/main/SQL%20EXAM%20-%20Jean-Luc%20BOA%20THIEMELE%20/QUESTION%204.txt)
 * [Question & solution 5](https://github.com/JLBT10/School_Projects/blob/main/SQL%20EXAM%20-%20Jean-Luc%20BOA%20THIEMELE%20/QUESTION%205.txt)
 
-Foundation and Advanced Statistics for Machine Learning Unit
+# Foundation and Advanced Statistics for Machine Learning Unit
 
 Two intensive learning units focusing on classical statistical modeling methods. The foundation part concentrates on discrete and continuous probability distribution, density functions, univariate linear regression and hypothesis testing.
 
@@ -18,3 +18,8 @@ Two intensive learning units focusing on classical statistical modeling methods.
 The Advanced part of the learning module addresses advanced statistical methods including multivariate linear models, Analysis of Variance, Model Regularization methods (Lasso & Ridge), Model selection methods, Decision trees, bagging and boosting, Random Forests, Dimensionality reduction using Principal Component Analysis.
 
 [Link to Advanced Statistics Exam](https://github.com/JLBT10/School_Projects/blob/main/ASML%20EXAM.pdf)
+
+
+Semantic Web learning unit is all about the data formats and the technologies to enable it like RDF, N-3, Turtle, How to query these data using SPARQL, and how to expand the vocabulary using OWL ontology.
+
+[Link to report]()
